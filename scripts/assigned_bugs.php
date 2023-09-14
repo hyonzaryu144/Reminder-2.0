@@ -22,13 +22,26 @@ $t_core_path = config_get( 'core_path' );
 require_once( $t_core_path.'email_api.php' );
 
 # Build and bind query
-$t_bug_table = db_get_table( 'mantis_bug_table' );
-$t_user_table = db_get_table( 'mantis_user_table' );
+$t_bug_table = db_get_table( 'bug' );
+$t_user_table = db_get_table( 'user' );
 $t_resolved = config_get( 'bug_resolved_status_threshold' );
 $query = "SELECT DISTINCT b.id bug_id, b.summary, b.handler_id, u.realname, u.email "
 	." FROM $t_bug_table b JOIN $t_user_table u ON (b.handler_id = u.id) "
 	." WHERE status < ".db_param();
-$results = db_query_bound( $query, array($t_resolved) );
+	
+$t_rem_include	= config_get('plugin_Reminder_reminder_include');
+$t_rem_projects	= "(";
+$t_rem_projects	.= config_get('plugin_Reminder_reminder_project_id');
+$t_rem_projects	.= ")";
+if (ON==$t_rem_include){
+	if ($t_rem_projects <>"0") {
+		$query .= " and b.project_id IN ". $t_rem_projects;
+	}
+}else{
+	$query .= " and b.project_id NOT IN ".$t_rem_projects;
+}
+
+$results = db_query( $query, array($t_resolved) );
 if ( ! $results) {
 	echo 'Query failed.';
 	exit( 1 );
